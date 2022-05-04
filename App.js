@@ -40,7 +40,17 @@ export default function App() {
   );
 
   const client = new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      typePolicies:{
+        Account:{
+          fields:{
+            balance(balance){
+              return `${balance} $`
+            }
+          }
+        }
+      }
+    }),
     link: splitLink
   })
 
