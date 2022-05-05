@@ -12,7 +12,7 @@ import DisplayScreen from './src/screens/DisplayScreen';
 export default function App() {
 
   const Stack = createNativeStackNavigator();
-  const URL = '192.168.1.102:4000';
+  const URL = '172.20.10.3:4000';
   //create http link
   const httpLink = new HttpLink({
     uri: `http://${URL}/graphql`

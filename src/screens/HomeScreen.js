@@ -22,13 +22,12 @@ function HomeScreen(props) {
 if(transactionsData)
         console.log(transactionsData)
 
-
     return (
         <View style={{ padding: 30, marginTop: 30 }}>
             <FlatButton bgColor="#00BFFF"
                 onPress={() => { props.navigation.navigate('AddAccountScreen') }}
                 title="Add Account"
-                count={10}
+                count={accountData?accountData.accounts.accounts.length:0}
                 countText="Accounts Count:"
                 icon="google-wallet"
             ></FlatButton>

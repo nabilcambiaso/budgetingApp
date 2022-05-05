@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, Image } from 'react-native'
 import { Button, TextInput } from 'react-native-paper'
 import { credit_card } from '../constants'
-import { CREATE_ACCOUNT_MUTATION } from '../graphQL/requests'
-import { useMutation } from '@apollo/client';
+import { CREATE_ACCOUNT_MUTATION,QUERY_ALL_ACCOUNTS } from '../graphQL/requests'
+import { useMutation,useQuery } from '@apollo/client';
 function AddAccountScreen() {
 
     const [accountName, setAccountName] = useState("");
@@ -11,7 +11,8 @@ function AddAccountScreen() {
     const [accountNote, setAccountNote] = useState("");
 
     const [createAccount, { error }] = useMutation(CREATE_ACCOUNT_MUTATION);
-
+    const { loading: accountLoading, data: accountData, error: accountError, refetch: accountRefetch } =
+        useQuery(QUERY_ALL_ACCOUNTS, { fetchPolicy: 'network-only' });
     const resetInputs = () => {
         setAccountName("");
         setAccountNote("");
@@ -43,7 +44,11 @@ function AddAccountScreen() {
                         }
                     }).then((resJson) => {
                         if (resJson.data)
+                        {
                             resetInputs();
+                            accountRefetch();
+                        }
+                           
                     }).catch((err) => console.log(err))
                 }}
                 style={styles.button} labelStyle={{ color: "white" }}>Add New Account</Button>
