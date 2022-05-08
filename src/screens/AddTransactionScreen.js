@@ -3,30 +3,28 @@ import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity } from 'react
 import { Button, TextInput } from 'react-native-paper'
 import { transaction_image } from '../constants'
 import { SafeAreaView } from "react-native-safe-area-context";
-import { CREATE_TRANSACTION_MUTATION, QUERY_ALL_ACCOUNTS } from '../graphQL/requests'
-import { useMutation, useQuery } from '@apollo/client';
+import { useGetAccounts, useSetTransaction } from '../graphQL/requests'
 import RBSheet from "react-native-raw-bottom-sheet";
 import { FontAwesome } from '@expo/vector-icons';
-function AddTransactionScreen() {
+import NetInfo from '@react-native-community/netinfo';
+import { connect } from "react-redux";
+
+function AddTransactionScreen(props) {
 
     const [accountName, setAccountName] = useState("Choose Account");
     const [amount, setAmount] = useState("");
     const [accountId, setAccountId] = useState("");
     const refRBSheet = useRef();
-    const [createTransaction, { error }] = useMutation(CREATE_TRANSACTION_MUTATION);
-    const { loading: accountLoading, data: accountData, error: accountError, refetch: accountRefetch } = useQuery(QUERY_ALL_ACCOUNTS);
 
-    if (accountLoading)
-        accountRefetch()
-    if (accountError)
-        console.log(accountError)
+    // const { loading: accountLoading, data: accountData, error: accountError, refetch }
+    //     = useGetAccounts();
 
     const resetInputs = () => {
         setAccountName("Choose account");
         setAmount("");
         setAccountId("");
     }
-
+console.log(props.transactionsList.length)
     const renderItem = (itemData) => {
         return (
             <View style={{ paddingHorizontal: 20, marginTop: 20, width: "100%" }}>
@@ -68,17 +66,34 @@ function AddTransactionScreen() {
                 }} labelStyle={{ color: "#1E90FF" }}>{accountName}</Button>
             <Button
                 onPress={async () => {
-                    await createTransaction({
-                        variables: {
-                            input: {
-                                account_id:accountId ,
-                                amount: amount
-                            }
+                    NetInfo.fetch().then(state => {
+                        if (!state.isConnected && state.isInternetReachable) {
+                            useSetTransaction({
+                                input: {
+                                    account_id: accountId,
+                                    amount: amount
+                                }
+                            })
+                                .then((resJson) => {
+                                    if (resJson.createTransaction) {
+                                        resetInputs();
+                                    }
+                                }).catch((err) => console.log(err))
+                        } else {
+                            props.addToTransactionsList({
+                                account_id: accountId,
+                                amount: amount,
+                                is_offline:true,
+                                id:parseInt(Date.now())
+                            })
+                            console.log("Connection type", state.type);
+                            console.log("Is connected?", state.isConnected);
+                            console.log("Is connected?", state.isInternetReachable);
                         }
-                    }).then((resJson) => {
-                        if (resJson.data)
-                            resetInputs();
-                    }).catch((err) => console.log(err))
+                    }).catch((err)=>{
+                        console.log("err",err);
+                    });
+
                 }}
                 style={styles.button} labelStyle={{ color: "white" }}>Add New Transactions</Button>
             <RBSheet
@@ -105,7 +120,7 @@ function AddTransactionScreen() {
                         ListFooterComponent={<View style={{ height: 10, marginBottom: 10 }}></View>}
                         scrollEnabled={true}
                         key={Math.random()}
-                        data={accountData && accountData.accounts.accounts}
+                        data={props.accountList}
                         keyExtractor={(item, index) => {
                             return index.toString();
                         }}
@@ -134,4 +149,12 @@ const styles = StyleSheet.create({
     }
 })
 
-export default AddTransactionScreen
+const mapState = (state) => ({
+    accountList: state.account.accountList,
+    transactionsList: state.transactions.transactionsList
+});
+const mapDispatch = (dispatch) => ({
+    addToTransactionsList: dispatch.transactions.addToTransactionsList
+});
+
+export default connect(mapState, mapDispatch)(AddTransactionScreen);

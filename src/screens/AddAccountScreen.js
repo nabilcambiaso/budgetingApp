@@ -2,22 +2,22 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, Image } from 'react-native'
 import { Button, TextInput } from 'react-native-paper'
 import { credit_card } from '../constants'
-import { CREATE_ACCOUNT_MUTATION,QUERY_ALL_ACCOUNTS } from '../graphQL/requests'
-import { useMutation,useQuery } from '@apollo/client';
-function AddAccountScreen() {
+import { useSetAccount } from '../graphQL/requests'
+import { connect } from "react-redux";
+
+function AddAccountScreen(props) {
 
     const [accountName, setAccountName] = useState("");
     const [accountInitialBalance, setInitialBalance] = useState("");
     const [accountNote, setAccountNote] = useState("");
 
-    const [createAccount, { error }] = useMutation(CREATE_ACCOUNT_MUTATION);
-    const { loading: accountLoading, data: accountData, error: accountError, refetch: accountRefetch } =
-        useQuery(QUERY_ALL_ACCOUNTS, { fetchPolicy: 'network-only' });
+
     const resetInputs = () => {
         setAccountName("");
         setAccountNote("");
         setInitialBalance("");
     }
+
     return (
         <View style={{ flex: 1, backgroundColor: "white", paddingTop: 30 }}>
             <Text style={{ textAlign: 'center', fontWeight: 'bold', fontSize: 19, color: "#1E90FF" }}>Add Account</Text>
@@ -34,24 +34,23 @@ function AddAccountScreen() {
 
             <Button
                 onPress={async () => {
-                    await createAccount({
-                        variables: {
-                            input: {
-                                name: accountName,
-                                initial_balance: accountInitialBalance,
-                                note: accountNote
+                    
+                    useSetAccount({
+                        input: {
+                            name: accountName,
+                            initial_balance: accountInitialBalance,
+                            note: accountNote
+                        }
+                    })
+                        .then((resJson) => {
+                            if (resJson.createAccount) {
+                                props.addToAccountList(resJson.createAccount)
+                                resetInputs();
                             }
-                        }
-                    }).then((resJson) => {
-                        if (resJson.data)
-                        {
-                            resetInputs();
-                            accountRefetch();
-                        }
-                           
-                    }).catch((err) => console.log(err))
+                        }).catch((err) => console.log(err))
                 }}
                 style={styles.button} labelStyle={{ color: "white" }}>Add New Account</Button>
+                            <Text>The count is {props.accountList.length}</Text>
         </View>
     )
 }
@@ -69,4 +68,11 @@ const styles = StyleSheet.create({
     }
 })
 
-export default AddAccountScreen
+const mapState = (state) => ({
+    accountList: state.account.accountList
+  });
+  const mapDispatch = (dispatch) => ({
+    addToAccountList: dispatch.account.addToAccountList,
+  });
+
+export default connect(mapState, mapDispatch)(AddAccountScreen);
