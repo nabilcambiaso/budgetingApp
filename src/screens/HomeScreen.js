@@ -88,7 +88,8 @@ function HomeScreen(props) {
                 }
             }
         });
-    }, [isOffline]);
+
+    }, [isOffline,accountData,transactionsData]);
 
 
     return (

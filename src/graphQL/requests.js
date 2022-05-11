@@ -1,10 +1,8 @@
 import { GraphQLClient, gql } from "graphql-request";
 import { useQuery } from "react-query";
 
-// const API_URL = `http://172.20.10.3:4000/graphql`;
-// const API_URL = `http://127.0.0.1:4000/graphql`;
+const API_URL = `http://127.0.0.1:4000/graphql`;
 
-const API_URL = `http://192.168.43.230:4000/graphql`;
 
 
 const graphQLClient = new GraphQLClient(API_URL, {
