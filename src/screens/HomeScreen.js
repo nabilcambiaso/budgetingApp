@@ -9,13 +9,26 @@ import NetInfo from '@react-native-community/netinfo';
 // get ready
 const GRAPHQL_ENDPOINT = "ws://localhost:4000/graphql";
 
-const query = `subscription Subscription {
+const transactionSubscription = `subscription Subscription {
     transactionCreated {
       id
       account_id
       amount
     }
-  }`;
+  }
+  `;
+
+const accountSubscription = `subscription AccountCreated {
+    accountCreated {
+      name
+      balance
+      initial_balance
+      opening_date
+      note
+      id
+    }
+  }
+  `;
 
 const client = new SubscriptionClient(GRAPHQL_ENDPOINT, {
     reconnect: true,
@@ -30,6 +43,8 @@ function HomeScreen(props) {
     const [isOffline, setOfflineStatus] = useState(false);
     const [retrieved, setRetrieved] = useState(false);
 
+    const [subscribedTransactionsIdList, setSubscribedTransactionsIdList] = useState([]);
+    const [subscribedAccountsIdList, setSubscribedAccountsIdList] = useState([]);
     const { data: accountData, error: accountError, refetch }
         = useGetAccounts();
     const { error: transactionsError, data: transactionsData, refetch: transactionsRefetch }
@@ -42,17 +57,35 @@ function HomeScreen(props) {
 
     useEffect(() => {
         client
-            .request({ query })
+            .request({ query: transactionSubscription })
             .subscribe({
                 next({ data }) {
-                    if (data) {
-                        props.addToTransactionsList(data.transactionCreated)
-                        // console.log("We got something!", data);
+                    if (data.transactionCreated) {
+                        const idExist = subscribedTransactionsIdList.includes(data.transactionCreated.id);
+                        if (!idExist) {
+                            console.log("We got some transactions!", data.transactionCreated);
+                            setSubscribedTransactionsIdList([...subscribedTransactionsIdList, data.transactionCreated.id]);
+                            props.addToTransactionsList(data.transactionCreated)
+                        }
+                    }
+                },
+            });
+
+        client
+            .request({ query: accountSubscription })
+            .subscribe({
+                next({ data }) {
+                    if (data.accountCreated) {
+                        const idExist = subscribedAccountsIdList.includes(data.accountCreated.id);
+                        if (!idExist) {
+                            console.log("We got some accounts!", data.accountCreated);
+                            setSubscribedAccountsIdList([...subscribedAccountsIdList, data.accountCreated.id]);
+                            props.addToAccountList(data.accountCreated)
+                        }
                     }
                 },
             });
     }, [])
-
 
     useEffect(() => {
         NetInfo.addEventListener(async (state) => {
@@ -89,7 +122,7 @@ function HomeScreen(props) {
             }
         });
 
-    }, [isOffline,accountData,transactionsData]);
+    }, [isOffline, accountData, transactionsData]);
 
 
     return (
@@ -130,6 +163,7 @@ const mapDispatch = (dispatch) => ({
     setAccountListAsync: dispatch.account.setAccountListAsync,
     setTransactionsList: dispatch.transactions.setTransactionsList,
     addToTransactionsList: dispatch.transactions.addToTransactionsList,
+    addToAccountList: dispatch.account.addToAccountList,
     deleteOfflineTransaction: dispatch.transactions.deleteOfflineTransaction
 });
 

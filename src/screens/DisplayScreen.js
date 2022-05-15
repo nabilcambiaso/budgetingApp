@@ -14,6 +14,9 @@ function DisplayScreen(props) {
     //     = useGetAccounts();
     // const { loading: transactionsLoading, error: transactionsError, data: transactionsData, refetch: transactionsRefetch }
     //     = useGetTransactions();
+   const sum = (key) => {
+        return this.reduce((a, b) => a + (b[key] || 0), 0);
+    }
 
     const renderAccounts = ({ item, index }) => {
         return (
@@ -58,8 +61,7 @@ function DisplayScreen(props) {
             </View>
         )
     }
-
-
+   
     return (
         <View style={styles.container}>
             <FlatList
@@ -68,7 +70,8 @@ function DisplayScreen(props) {
                 renderItem={renderAccounts}
                 data={props.accountList}
                 keyExtractor={(item, index) => index.toString()} />
-
+       
+       <Text style={{paddingHorizontal:20,fontWeight:"bold"}}>{"transactions sum : "+props.transactionsList.map(item => item.amount).reduce((prev, curr) => prev + curr, 0)}</Text>
             <FlatList
                 style={styles.ScrollView}
                 renderItem={renderTransactions}
